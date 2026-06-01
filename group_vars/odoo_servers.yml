@@ -1,0 +1,52 @@
+---
+# ── Odoo Version ─────────────────────────────────────────────────────────────
+odoo_version: "19.0"                        # Change to 15.0 / 16.0 / 17.0
+odoo_release: "20240401"                    # Set to specific nightly or leave empty ""
+odoo_repo: "https://github.com/odoo/odoo.git"
+
+# ── System User ───────────────────────────────────────────────────────────────
+odoo_user: odoo
+odoo_group: odoo
+odoo_home: /opt/odoo
+odoo_install_dir: "{{ odoo_home }}/odoo-server"
+odoo_venv_dir: "{{ odoo_home }}/venv"
+odoo_config_dir: /etc/odoo
+odoo_log_dir: /var/log/odoo
+odoo_data_dir: "{{ odoo_home }}/data"
+odoo_addons_dir: "{{ odoo_home }}/custom-addons"
+odoo_backup_dir: /var/backups/odoo
+
+# ── Python ────────────────────────────────────────────────────────────────────
+python_version: "3.12"   # 3.10 for Odoo 16/17, 3.8 for Odoo 15
+
+# ── PostgreSQL ────────────────────────────────────────────────────────────────
+postgres_version: "15"
+pg_user: odoo
+pg_password: "CHANGE_ME_STRONG_PASSWORD"
+pg_db: odoo_prod
+pg_host: ""
+pg_port: 5432
+
+# ── Odoo Config ───────────────────────────────────────────────────────────────
+odoo_port: 8069
+odoo_longpolling_port: 8072
+odoo_workers: 4                             # CPUs * 2 + 1 recommended
+odoo_max_cron_threads: 2
+odoo_limit_memory_hard: 2684354560          # 2.5 GB
+odoo_limit_memory_soft: 2147483648          # 2 GB
+odoo_limit_request: 8192
+odoo_limit_time_cpu: 60
+odoo_limit_time_real: 120
+odoo_admin_passwd: "CHANGE_ME_MASTER_PASSWORD"
+odoo_db_filter: ".*"
+
+# ── NGINX / SSL ───────────────────────────────────────────────────────────────
+domain_name: "odoo.yourdomain.com"
+enable_ssl: false                           # Set true after DNS is configured
+letsencrypt_email: "admin@yourdomain.com"
+
+# ── Git ───────────────────────────────────────────────────────────────────────
+git_branch: "{{ odoo_version }}"
+
+# ── Wkhtmltopdf ───────────────────────────────────────────────────────────────
+wkhtmltopdf_url: "https://github.com/wkhtmltopdf/packaging/releases/download/0.12.6.1-3/wkhtmltox_0.12.6.1-3.jammy_amd64.deb"
