@@ -1,3 +1,13 @@
+# ── Debian/Ubuntu cluster paths (managed by pg_createcluster) ─────────────────
+# These MUST be present; without them the cluster won't start or will place its
+# socket in the wrong directory.
+data_directory = '/var/lib/postgresql/{{ postgres_version }}/main'
+hba_file = '/etc/postgresql/{{ postgres_version }}/main/pg_hba.conf'
+ident_file = '/etc/postgresql/{{ postgres_version }}/main/pg_ident.conf'
+external_pid_file = '/var/run/postgresql/{{ postgres_version }}-main.pid'
+unix_socket_directories = '/var/run/postgresql'
+cluster_name = '{{ postgres_version }}/main'
+
 # Basic Settings
 listen_addresses = 'localhost'
 port = {{ pg_port }}
@@ -39,3 +49,6 @@ log_lock_waits = on
 autovacuum = on
 autovacuum_max_workers = 3
 autovacuum_naptime = 1min
+
+# Include Debian conf.d drop-ins
+include_dir = 'conf.d'

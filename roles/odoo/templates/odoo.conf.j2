@@ -5,7 +5,7 @@ db_port             = {{ pg_port }}
 db_user             = {{ pg_user }}
 db_password         = {{ pg_password }}
 db_name             = {{ pg_db }}
-dbfilter            = {{ odoo_db_filter | quote }}
+dbfilter            = {{ odoo_db_filter }}
 db_maxconn          = 64
 
 ; ── Server ───────────────────────────────────────────────────────────────────
@@ -16,7 +16,7 @@ proxy_mode          = True
 
 ; ── Paths ────────────────────────────────────────────────────────────────────
 data_dir            = {{ odoo_data_dir }}
-addons_path         = "{{ odoo_install_dir }}/addons,{{ odoo_addons_dir }}"
+addons_path         = {{ odoo_install_dir }}/addons,{{ odoo_addons_dir }}
 logfile             = {{ odoo_log_dir }}/odoo.log
 
 ; ── Security ─────────────────────────────────────────────────────────────────

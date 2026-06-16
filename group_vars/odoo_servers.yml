@@ -19,8 +19,11 @@ odoo_backup_dir: /var/backups/odoo
 # ── Python ────────────────────────────────────────────────────────────────────
 python_version: "3.12"   # 3.10 for Odoo 16/17, 3.8 for Odoo 15
 
+# ── Node.js (for Odoo CSS tooling: less, rtlcss) ──────────────────────────────
+nodejs_version: "20"     # LTS; installed from NodeSource
+
 # ── PostgreSQL ────────────────────────────────────────────────────────────────
-postgres_version: "15"
+postgres_version: "16"   # Ubuntu 24.04 native version
 pg_user: odoo
 pg_password: "CHANGE_ME_STRONG_PASSWORD"
 pg_db: odoo_prod

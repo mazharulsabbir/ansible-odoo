@@ -19,8 +19,9 @@ server {
 }
 
 server {
-    listen 443 ssl http2;
-    listen [::]:443 ssl http2;
+    listen 443 ssl;
+    http2       on;
+    listen [::]:443 ssl;
     server_name {{ domain_name }};
 
     ssl_certificate /etc/letsencrypt/live/{{ domain_name }}/fullchain.pem;
@@ -56,8 +57,8 @@ server {
     access_log /var/log/nginx/odoo_access.log;
     error_log  /var/log/nginx/odoo_error.log warn;
 
-    # Longpolling (live chat / bus)
-    location /longpolling {
+    # Longpolling/Websocket (live chat / bus)
+    location /websocket {
         proxy_pass http://odoochat;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;

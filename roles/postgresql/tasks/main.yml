@@ -1,22 +1,4 @@
 ---
-- name: Install PostgreSQL dependencies
-  apt:
-    name:
-      - gnupg2
-      - apt-transport-https
-    state: present
-
-- name: Add PostgreSQL APT key
-  apt_key:
-    url: https://www.postgresql.org/media/keys/ACCC4CF8.asc
-    state: present
-
-- name: Add PostgreSQL APT repository
-  apt_repository:
-    repo: "deb http://apt.postgresql.org/pub/repos/apt {{ ansible_distribution_release }}-pgdg main"
-    state: present
-    filename: pgdg
-
 - name: Install PostgreSQL {{ postgres_version }}
   apt:
     name:
@@ -28,10 +10,32 @@
     state: present
 
 - name: Ensure PostgreSQL is started and enabled
-  service:
+  systemd:
     name: postgresql
     state: started
     enabled: yes
+    daemon_reload: yes
+
+- name: Configure PostgreSQL pg_hba.conf
+  template:
+    src: pg_hba.conf.j2
+    dest: "/etc/postgresql/{{ postgres_version }}/main/pg_hba.conf"
+    owner: postgres
+    group: postgres
+    mode: "0640"
+  notify: restart postgresql
+
+- name: Configure PostgreSQL performance settings
+  template:
+    src: postgresql.conf.j2
+    dest: "/etc/postgresql/{{ postgres_version }}/main/postgresql.conf"
+    owner: postgres
+    group: postgres
+    mode: "0644"
+  notify: restart postgresql
+
+- name: Apply PostgreSQL configuration before connecting
+  meta: flush_handlers
 
 - name: Create PostgreSQL odoo user
   become_user: postgres
@@ -51,21 +55,3 @@
     lc_ctype: en_US.UTF-8
     template: template0
     state: present
-
-- name: Configure PostgreSQL pg_hba.conf
-  template:
-    src: pg_hba.conf.j2
-    dest: "/etc/postgresql/{{ postgres_version }}/main/pg_hba.conf"
-    owner: postgres
-    group: postgres
-    mode: "0640"
-  notify: restart postgresql
-
-- name: Configure PostgreSQL performance settings
-  template:
-    src: postgresql.conf.j2
-    dest: "/etc/postgresql/{{ postgres_version }}/main/postgresql.conf"
-    owner: postgres
-    group: postgres
-    mode: "0644"
-  notify: restart postgresql
