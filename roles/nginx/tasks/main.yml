@@ -1,0 +1,66 @@
+---
+- name: Install Nginx
+  apt:
+    name: nginx
+    state: present
+
+- name: Remove default nginx site
+  file:
+    path: /etc/nginx/sites-enabled/default
+    state: absent
+
+- name: Deploy Odoo Nginx config
+  template:
+    src: odoo_nginx.conf.j2
+    dest: /etc/nginx/sites-available/odoo
+    owner: root
+    group: root
+    mode: "0644"
+  notify: reload nginx
+
+- name: Enable Odoo nginx site
+  file:
+    src: /etc/nginx/sites-available/odoo
+    dest: /etc/nginx/sites-enabled/odoo
+    state: link
+  notify: reload nginx
+
+- name: Test nginx configuration
+  command: nginx -t
+  changed_when: false
+
+- name: Ensure nginx is started and enabled
+  service:
+    name: nginx
+    state: started
+    enabled: yes
+
+- name: Install Certbot for SSL (if enabled)
+  apt:
+    name:
+      - certbot
+      - python3-certbot-nginx
+    state: present
+  when: enable_ssl
+
+- name: Obtain Let's Encrypt certificate
+  command: >
+    certbot --nginx
+    -d {{ domain_name }}
+    --non-interactive
+    --agree-tos
+    --email {{ letsencrypt_email }}
+    --redirect
+  args:
+    creates: "/etc/letsencrypt/live/{{ domain_name }}/fullchain.pem"
+  when: enable_ssl
+  notify: reload nginx
+
+- name: Schedule certbot renewal
+  cron:
+    name: "Certbot renewal"
+    minute: "0"
+    hour: "3"
+    day: "*/7"
+    job: "certbot renew --quiet --post-hook 'systemctl reload nginx'"
+  when: enable_ssl

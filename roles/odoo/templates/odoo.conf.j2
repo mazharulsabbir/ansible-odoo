@@ -1,0 +1,38 @@
+[options]
+; ── Database ─────────────────────────────────────────────────────────────────
+db_host             = {{ pg_host }}
+db_port             = {{ pg_port }}
+db_user             = {{ pg_user }}
+db_password         = {{ pg_password }}
+db_name             = {{ pg_db }}
+dbfilter            = {{ odoo_db_filter | quote }}
+db_maxconn          = 64
+
+; ── Server ───────────────────────────────────────────────────────────────────
+http_port         = {{ odoo_port }}
+http_interface      = 127.0.0.1
+gevent_port        = {{ odoo_longpolling_port }}
+proxy_mode          = True
+
+; ── Paths ────────────────────────────────────────────────────────────────────
+data_dir            = {{ odoo_data_dir }}
+addons_path         = "{{ odoo_install_dir }}/addons,{{ odoo_addons_dir }}"
+logfile             = {{ odoo_log_dir }}/odoo.log
+
+; ── Security ─────────────────────────────────────────────────────────────────
+admin_passwd        = {{ odoo_admin_passwd }}
+list_db             = False
+
+; ── Performance ──────────────────────────────────────────────────────────────
+workers             = {{ odoo_workers }}
+max_cron_threads    = {{ odoo_max_cron_threads }}
+limit_memory_hard   = {{ odoo_limit_memory_hard }}
+limit_memory_soft   = {{ odoo_limit_memory_soft }}
+limit_request       = {{ odoo_limit_request }}
+limit_time_cpu      = {{ odoo_limit_time_cpu }}
+limit_time_real     = {{ odoo_limit_time_real }}
+
+; ── Logging ──────────────────────────────────────────────────────────────────
+log_level           = warn
+log_handler         = :WARNING
+syslog              = False

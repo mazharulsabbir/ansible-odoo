@@ -1,0 +1,6 @@
+# PostgreSQL Client Authentication Configuration
+# TYPE  DATABASE        USER            ADDRESS                 METHOD
+local   all             postgres                                peer
+local   all             all                                     peer
+host    all             {{ pg_user }}   127.0.0.1/32            md5
+host    all             {{ pg_user }}   ::1/128                 md5

@@ -1,0 +1,85 @@
+# ============================================================================
+# Ansible Odoo Project - .gitignore
+# ============================================================================
+
+# ── Sensitive Files (NEVER commit these) ────────────────────────────────────
+# Vault password file
+.vault_pass
+.vault_password
+*.vault_pass
+
+# Encrypted vault files (optional - include if you want encrypted vaults tracked)
+# Uncomment the next line if you DON'T want to track encrypted vault files:
+# group_vars/vault.yml
+
+# SSH keys
+*.pem
+*.key
+id_rsa
+id_ed25519
+
+# ── Ansible Artifacts ────────────────────────────────────────────────────────
+*.retry
+ansible.log
+*.log
+
+# Ansible Galaxy roles (if using requirements.yml)
+roles/galaxy/
+
+# Ansible collections cache
+collections/
+
+# ── Python ───────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+.venv/
+ENV/
+env/
+.eggs/
+*.egg-info/
+*.egg
+
+# ── OS Generated ─────────────────────────────────────────────────────────────
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# ── IDE and Editors ──────────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.project
+.settings/
+*.sublime-project
+*.sublime-workspace
+
+# ── Local Development ────────────────────────────────────────────────────────
+# Local inventory overrides
+inventory/local.ini
+inventory/dev.ini
+
+# Local variable overrides
+group_vars/local.yml
+host_vars/
+
+# Temporary files
+*.tmp
+*.bak
+*.orig
+
+# ── Backup Files ─────────────────────────────────────────────────────────────
+*.backup
+*.sql
+*.tar.gz
+backups/

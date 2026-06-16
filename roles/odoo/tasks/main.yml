@@ -1,0 +1,156 @@
+---
+- name: Create odoo system group
+  group:
+    name: "{{ odoo_group }}"
+    system: yes
+    state: present
+
+- name: Create odoo system user
+  user:
+    name: "{{ odoo_user }}"
+    group: "{{ odoo_group }}"
+    home: "{{ odoo_home }}"
+    shell: /bin/bash
+    system: yes
+    createhome: yes
+    state: present
+
+- name: Create required directories
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ odoo_user }}"
+    group: "{{ odoo_group }}"
+    mode: "0755"
+  loop:
+    - "{{ odoo_home }}"
+    - "{{ odoo_config_dir }}"
+    - "{{ odoo_log_dir }}"
+    - "{{ odoo_data_dir }}"
+    - "{{ odoo_addons_dir }}"
+    - "{{ odoo_backup_dir }}"
+
+- name: Install wkhtmltopdf
+  block:
+    - name: Download wkhtmltopdf
+      get_url:
+        url: "{{ wkhtmltopdf_url }}"
+        dest: /tmp/wkhtmltox.deb
+        mode: "0644"
+
+    - name: Install wkhtmltopdf
+      apt:
+        deb: /tmp/wkhtmltox.deb
+        state: present
+      ignore_errors: yes
+
+    - name: Fallback - install via apt
+      apt:
+        name: wkhtmltopdf
+        state: present
+      when: false  # only used as fallback
+
+- name: Clone Odoo {{ odoo_version }} from GitHub
+  become_user: "{{ odoo_user }}"
+  git:
+    repo: "{{ odoo_repo }}"
+    dest: "{{ odoo_install_dir }}"
+    version: "{{ git_branch }}"
+    depth: 1
+    single_branch: yes
+    force: no
+  register: git_clone
+
+- name: Create Python virtual environment
+  become_user: "{{ odoo_user }}"
+  command: "python{{ python_version }} -m venv {{ odoo_venv_dir }}"
+  args:
+    creates: "{{ odoo_venv_dir }}/bin/activate"
+
+- name: Upgrade pip in venv
+  become_user: "{{ odoo_user }}"
+  pip:
+    name:
+      - pip
+      - setuptools
+      - wheel
+    state: latest
+    virtualenv: "{{ odoo_venv_dir }}"
+    virtualenv_python: "python{{ python_version }}"
+
+- name: Install Odoo Python requirements
+  become_user: "{{ odoo_user }}"
+  pip:
+    requirements: "{{ odoo_install_dir }}/requirements.txt"
+    virtualenv: "{{ odoo_venv_dir }}"
+    state: present
+  register: pip_install
+  retries: 3
+  delay: 10
+
+- name: Install additional Python packages
+  become_user: "{{ odoo_user }}"
+  pip:
+    name:
+      - psycopg2-binary
+      - Pillow
+      - gevent
+      - greenlet
+      - pyotp
+      - qrcode
+    virtualenv: "{{ odoo_venv_dir }}"
+    state: present
+
+- name: Deploy Odoo configuration file
+  template:
+    src: odoo.conf.j2
+    dest: "{{ odoo_config_dir }}/odoo.conf"
+    owner: "{{ odoo_user }}"
+    group: "{{ odoo_group }}"
+    mode: "0640"
+  notify: restart odoo
+
+- name: Deploy Odoo systemd service
+  template:
+    src: odoo.service.j2
+    dest: /etc/systemd/system/odoo.service
+    owner: root
+    group: root
+    mode: "0644"
+  notify:
+    - reload systemd
+    - restart odoo
+
+- name: Set correct permissions on odoo directories
+  file:
+    path: "{{ item }}"
+    owner: "{{ odoo_user }}"
+    group: "{{ odoo_group }}"
+    recurse: yes
+  loop:
+    - "{{ odoo_log_dir }}"
+    - "{{ odoo_data_dir }}"
+    - "{{ odoo_addons_dir }}"
+
+- name: Enable and start Odoo service
+  systemd:
+    name: odoo
+    state: started
+    enabled: yes
+    daemon_reload: yes
+
+- name: Deploy backup script
+  template:
+    src: odoo_backup.sh.j2
+    dest: /usr/local/bin/odoo_backup.sh
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Schedule daily backup cron job
+  cron:
+    name: "Odoo daily backup"
+    minute: "0"
+    hour: "2"
+    job: "/usr/local/bin/odoo_backup.sh >> /var/log/odoo/backup.log 2>&1"
+    user: "{{ odoo_user }}"

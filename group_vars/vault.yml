@@ -1,0 +1,27 @@
+---
+# ============================================================================
+# ANSIBLE VAULT - SENSITIVE VARIABLES
+# ============================================================================
+#
+# IMPORTANT: Before deploying, you MUST:
+# 1. Replace the placeholder values below with your actual secrets
+# 2. Encrypt this file using: ansible-vault encrypt group_vars/vault.yml
+# 3. Run playbooks with: ansible-playbook site.yml --ask-vault-pass
+#
+# To edit encrypted file: ansible-vault edit group_vars/vault.yml
+# To view encrypted file: ansible-vault view group_vars/vault.yml
+#
+# Generate strong passwords using:
+#   openssl rand -base64 32
+#   pwgen -s 32 1
+#
+# ============================================================================
+
+# PostgreSQL database password for the 'odoo' user
+# Used for database authentication in odoo.conf and PostgreSQL setup
+vault_pg_password: "CHANGE_ME_GENERATE_STRONG_PASSWORD"
+
+# Odoo master password (admin_passwd in odoo.conf)
+# Required to create/duplicate/delete databases via web interface
+# Set a very strong password or disable database manager in production
+vault_odoo_admin_passwd: "CHANGE_ME_GENERATE_STRONG_PASSWORD"

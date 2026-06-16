@@ -1,0 +1,14 @@
+---
+- name: reload systemd
+  systemd:
+    daemon_reload: yes
+
+- name: restart odoo
+  systemd:
+    name: odoo
+    state: restarted
+
+- name: stop odoo
+  systemd:
+    name: odoo
+    state: stopped

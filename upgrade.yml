@@ -1,0 +1,67 @@
+---
+# ═══════════════════════════════════════════════════════════════════════════════
+# Odoo Upgrade Playbook
+# Usage: ansible-playbook upgrade.yml
+# ═══════════════════════════════════════════════════════════════════════════════
+
+- name: Upgrade Odoo
+  hosts: odoo_servers
+  become: yes
+  serial: 1   # one server at a time for rolling upgrades
+
+  vars:
+    backup_before_upgrade: true
+
+  pre_tasks:
+    - name: Take backup before upgrade
+      command: /usr/local/bin/odoo_backup.sh
+      become_user: "{{ odoo_user }}"
+      when: backup_before_upgrade
+
+    - name: Stop Odoo service
+      systemd:
+        name: odoo
+        state: stopped
+
+  tasks:
+    - name: Pull latest changes from git
+      become_user: "{{ odoo_user }}"
+      git:
+        repo: "{{ odoo_repo }}"
+        dest: "{{ odoo_install_dir }}"
+        version: "{{ git_branch }}"
+        force: no
+      register: git_pull
+
+    - name: Update Python dependencies
+      become_user: "{{ odoo_user }}"
+      pip:
+        requirements: "{{ odoo_install_dir }}/requirements.txt"
+        virtualenv: "{{ odoo_venv_dir }}"
+        state: present
+      when: git_pull.changed
+
+    - name: Update Odoo database schema
+      become_user: "{{ odoo_user }}"
+      command: >
+        {{ odoo_venv_dir }}/bin/python3 {{ odoo_install_dir }}/odoo-bin
+        --config {{ odoo_config_dir }}/odoo.conf
+        --update all
+        --stop-after-init
+      when: git_pull.changed
+
+  post_tasks:
+    - name: Start Odoo service
+      systemd:
+        name: odoo
+        state: started
+
+    - name: Verify Odoo is running
+      wait_for:
+        port: "{{ odoo_port }}"
+        host: 127.0.0.1
+        timeout: 60
+
+    - name: Upgrade complete
+      debug:
+        msg: "✅ Odoo upgraded successfully on {{ inventory_hostname }}"

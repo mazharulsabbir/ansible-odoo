@@ -1,0 +1,43 @@
+#!/bin/bash
+# Odoo production backup script
+# Backs up database + filestore
+
+set -euo pipefail
+
+BACKUP_DIR="{{ odoo_backup_dir }}"
+DB_NAME="{{ pg_db }}"
+DB_USER="{{ pg_user }}"
+FILESTORE="{{ odoo_data_dir }}/filestore"
+TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
+BACKUP_FILE="$BACKUP_DIR/odoo_backup_${TIMESTAMP}"
+RETAIN_DAYS=7
+
+echo "[$(date)] Starting Odoo backup..."
+
+# Dump PostgreSQL database
+PGPASSWORD="{{ pg_password }}" pg_dump \
+    -h {{ pg_host }} \
+    -p {{ pg_port }} \
+    -U "$DB_USER" \
+    -Fc \
+    -f "${BACKUP_FILE}.dump" \
+    "$DB_NAME"
+
+# Backup filestore
+if [ -d "$FILESTORE" ]; then
+    tar -czf "${BACKUP_FILE}_filestore.tar.gz" -C "$(dirname $FILESTORE)" "$(basename $FILESTORE)"
+fi
+
+# Combine into single archive
+tar -czf "${BACKUP_FILE}.tar.gz" \
+    "${BACKUP_FILE}.dump" \
+    "${BACKUP_FILE}_filestore.tar.gz" 2>/dev/null || true
+
+# Cleanup temp files
+rm -f "${BACKUP_FILE}.dump" "${BACKUP_FILE}_filestore.tar.gz"
+
+# Remove old backups
+find "$BACKUP_DIR" -name "odoo_backup_*.tar.gz" -mtime +$RETAIN_DAYS -delete
+
+echo "[$(date)] Backup completed: ${BACKUP_FILE}.tar.gz"
+echo "[$(date)] Size: $(du -sh ${BACKUP_FILE}.tar.gz | cut -f1)"

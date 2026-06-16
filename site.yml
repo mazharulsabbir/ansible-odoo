@@ -1,0 +1,60 @@
+---
+# ═══════════════════════════════════════════════════════════════════════════════
+# Odoo Production Server Setup
+# Usage:
+#   Full install:       ansible-playbook site.yml
+#   Specific tags:      ansible-playbook site.yml --tags "odoo,nginx"
+#   Dry run:            ansible-playbook site.yml --check
+#   Specific host:      ansible-playbook site.yml -l odoo-prod
+# ═══════════════════════════════════════════════════════════════════════════════
+
+- name: Full Odoo production server setup
+  hosts: odoo_servers
+  become: yes
+
+  pre_tasks:
+    - name: Verify connection
+      ping:
+
+    - name: Print deployment info
+      debug:
+        msg:
+          - "Host          : {{ inventory_hostname }}"
+          - "Odoo version  : {{ odoo_version }}"
+          - "Python version: {{ python_version }}"
+          - "PostgreSQL    : {{ postgres_version }}"
+          - "Domain        : {{ domain_name }}"
+          - "SSL enabled   : {{ enable_ssl }}"
+
+  roles:
+    - role: common
+      tags: [common, system]
+
+    - role: postgresql
+      tags: [postgresql, database, db]
+
+    - role: odoo
+      tags: [odoo, app]
+
+    - role: nginx
+      tags: [nginx, web]
+
+  post_tasks:
+    - name: Verify Odoo service is running
+      systemd:
+        name: odoo
+      register: odoo_status
+      failed_when: odoo_status.status.ActiveState != 'active'
+
+    - name: Verify Nginx service is running
+      systemd:
+        name: nginx
+      register: nginx_status
+      failed_when: nginx_status.status.ActiveState != 'active'
+
+    - name: Print success message
+      debug:
+        msg:
+          - "✅ Odoo {{ odoo_version }} deployed successfully!"
+          - "🌐 URL: http{% if enable_ssl %}s{% endif %}://{{ domain_name }}"
+          - "🔑 Admin password is set in group_vars (change it!)"
