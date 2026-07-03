@@ -9,7 +9,7 @@
 *.vault_pass
 
 # Vault file containing sensitive data (use vault.yml.example as template)
-group_vars/vault.yml
+group_vars/all/vault.yml
 
 # SSH keys
 *.pem

@@ -1,4 +1,4 @@
-# Ansible Odoo Deployment
+'''''''''# Ansible Odoo Deployment
 
 Automated provisioning of a production-ready Odoo ERP server with PostgreSQL, Nginx reverse proxy, Python virtual environment, systemd service, Let's Encrypt SSL, automated backups, and security hardening.
 
@@ -96,7 +96,7 @@ odoo_admin_passwd: "YOUR_STRONG_MASTER_PASSWORD"
 
 #### Option B: Secure Setup with Ansible Vault (recommended for production)
 
-1. Edit `group_vars/vault.yml` with your passwords:
+1. Edit `group_vars/all/vault.yml` with your passwords:
 
 ```yaml
 vault_pg_password: "YOUR_STRONG_DATABASE_PASSWORD"
@@ -106,7 +106,7 @@ vault_odoo_admin_passwd: "YOUR_STRONG_MASTER_PASSWORD"
 2. Encrypt the vault file:
 
 ```bash
-ansible-vault encrypt group_vars/vault.yml
+ansible-vault encrypt group_vars/all/vault.yml
 ```
 
 3. Update `group_vars/odoo_servers.yml` to reference vault variables:
@@ -363,16 +363,16 @@ ansible odoo_servers -m command -a "sudo -u odoo psql -d odoo_prod -c '\conninfo
 
 ```bash
 # Encrypt the vault file
-ansible-vault encrypt group_vars/vault.yml
+ansible-vault encrypt group_vars/all/vault.yml
 
 # Edit encrypted file
-ansible-vault edit group_vars/vault.yml
+ansible-vault edit group_vars/all/vault.yml
 
 # View encrypted file
-ansible-vault view group_vars/vault.yml
+ansible-vault view group_vars/all/vault.yml
 
 # Re-encrypt with new password
-ansible-vault rekey group_vars/vault.yml
+ansible-vault rekey group_vars/all/vault.yml
 ```
 
 ### Running Playbooks with Vault

@@ -5,20 +5,20 @@
 #
 # SETUP INSTRUCTIONS:
 # 1. Copy this file to vault.yml:
-#    cp group_vars/vault.yml.example group_vars/vault.yml
+#    cp group_vars/all/vault.yml.example group_vars/all/vault.yml
 #
 # 2. Replace ALL placeholder values with your actual secrets
 #
 # 3. Encrypt the vault.yml file:
-#    ansible-vault encrypt group_vars/vault.yml
+#    ansible-vault encrypt group_vars/all/vault.yml
 #
 # 4. Run playbooks with vault password:
 #    ansible-playbook site.yml --ask-vault-pass
 #    OR
 #    ansible-playbook site.yml --vault-password-file .vault_pass
 #
-# To edit encrypted file: ansible-vault edit group_vars/vault.yml
-# To view encrypted file: ansible-vault view group_vars/vault.yml
+# To edit encrypted file: ansible-vault edit group_vars/all/vault.yml
+# To view encrypted file: ansible-vault view group_vars/all/vault.yml
 #
 # Generate strong passwords using:
 #   openssl rand -base64 32
