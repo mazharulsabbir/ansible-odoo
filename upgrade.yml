@@ -24,7 +24,7 @@
         state: stopped
 
   tasks:
-    - name: Pull latest changes from git
+    - name: Pull latest Odoo core from git
       become_user: "{{ odoo_user }}"
       git:
         repo: "{{ odoo_repo }}"
@@ -32,6 +32,38 @@
         version: "{{ git_branch }}"
         force: no
       register: git_pull
+
+    - name: Pull latest custom addon repositories
+      become_user: "{{ odoo_user }}"
+      git:
+        repo: "{{ item.repo }}"
+        dest: "{{ odoo_addons_dir }}/{{ item.repo | basename | regex_replace('\\.git$', '') }}"
+        version: "{{ item.branch | default(git_branch) }}"
+        force: no
+        update: yes
+      loop: "{{ custom_addons_repos }}"
+      when: custom_addons_repos | length > 0
+      register: custom_addons_pull
+
+    - name: Find all Odoo module directories
+      find:
+        paths: "{{ odoo_addons_dir }}"
+        patterns: "__manifest__.py"
+        recurse: yes
+        file_type: file
+      register: manifest_files
+
+    - name: Build list of addon paths from discovered modules
+      set_fact:
+        discovered_addon_paths: "{{ manifest_files.files | map(attribute='path') | map('dirname') | map('dirname') | unique | list }}"
+
+    - name: Update Odoo configuration with addon paths
+      template:
+        src: roles/odoo/templates/odoo.conf.j2
+        dest: "{{ odoo_config_dir }}/odoo.conf"
+        owner: "{{ odoo_user }}"
+        group: "{{ odoo_group }}"
+        mode: "0640"
 
     - name: Update Python dependencies
       become_user: "{{ odoo_user }}"
@@ -48,7 +80,7 @@
         --config {{ odoo_config_dir }}/odoo.conf
         --update all
         --stop-after-init
-      when: git_pull.changed
+      when: git_pull.changed or (custom_addons_pull.changed | default(false))
 
   post_tasks:
     - name: Start Odoo service
@@ -64,4 +96,4 @@
 
     - name: Upgrade complete
       debug:
-        msg: "✅ Odoo upgraded successfully on {{ inventory_hostname }}"
+        msg: "Odoo upgraded successfully on {{ inventory_hostname }} (core: {{ 'updated' if git_pull.changed else 'no changes' }}, addons: {{ 'updated' if (custom_addons_pull.changed | default(false)) else 'no changes' }})"
