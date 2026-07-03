@@ -8,9 +8,8 @@
 .vault_password
 *.vault_pass
 
-# Encrypted vault files (optional - include if you want encrypted vaults tracked)
-# Uncomment the next line if you DON'T want to track encrypted vault files:
-# group_vars/vault.yml
+# Vault file containing sensitive data (use vault.yml.example as template)
+group_vars/vault.yml
 
 # SSH keys
 *.pem

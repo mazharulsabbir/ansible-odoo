@@ -1,12 +1,21 @@
 ---
 # ============================================================================
-# ANSIBLE VAULT - SENSITIVE VARIABLES
+# ANSIBLE VAULT - SENSITIVE VARIABLES (EXAMPLE)
 # ============================================================================
 #
-# IMPORTANT: Before deploying, you MUST:
-# 1. Replace the placeholder values below with your actual secrets
-# 2. Encrypt this file using: ansible-vault encrypt group_vars/vault.yml
-# 3. Run playbooks with: ansible-playbook site.yml --ask-vault-pass
+# SETUP INSTRUCTIONS:
+# 1. Copy this file to vault.yml:
+#    cp group_vars/vault.yml.example group_vars/vault.yml
+#
+# 2. Replace ALL placeholder values with your actual secrets
+#
+# 3. Encrypt the vault.yml file:
+#    ansible-vault encrypt group_vars/vault.yml
+#
+# 4. Run playbooks with vault password:
+#    ansible-playbook site.yml --ask-vault-pass
+#    OR
+#    ansible-playbook site.yml --vault-password-file .vault_pass
 #
 # To edit encrypted file: ansible-vault edit group_vars/vault.yml
 # To view encrypted file: ansible-vault view group_vars/vault.yml

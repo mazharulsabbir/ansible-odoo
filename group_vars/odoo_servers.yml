@@ -25,7 +25,7 @@ nodejs_version: "20"     # LTS; installed from NodeSource
 # ── PostgreSQL ────────────────────────────────────────────────────────────────
 postgres_version: "16"   # Ubuntu 24.04 native version
 pg_user: odoo
-pg_password: "CHANGE_ME_STRONG_PASSWORD"
+pg_password: "{{ vault_pg_password }}"
 pg_db: odoo_prod
 pg_host: ""
 pg_port: 5432
@@ -40,13 +40,13 @@ odoo_limit_memory_soft: 2147483648          # 2 GB
 odoo_limit_request: 8192
 odoo_limit_time_cpu: 60
 odoo_limit_time_real: 120
-odoo_admin_passwd: "CHANGE_ME_MASTER_PASSWORD"
+odoo_admin_passwd: "{{ vault_odoo_admin_passwd }}"
 odoo_db_filter: ".*"
 
 # ── NGINX / SSL ───────────────────────────────────────────────────────────────
-domain_name: "odoo.yourdomain.com"
+domain_name: "{{ vault_domain_name }}"
 enable_ssl: false                           # Set true after DNS is configured
-letsencrypt_email: "admin@yourdomain.com"
+letsencrypt_email: "{{ vault_letsencrypt_email }}"
 
 # ── Git ───────────────────────────────────────────────────────────────────────
 git_branch: "{{ odoo_version }}"
