@@ -101,6 +101,30 @@
     virtualenv: "{{ odoo_venv_dir }}"
     state: present
 
+- name: Clone custom addon repositories
+  become_user: "{{ odoo_user }}"
+  git:
+    repo: "{{ item.repo }}"
+    dest: "{{ odoo_addons_dir }}/{{ item.repo | basename | regex_replace('\\.git$', '') }}"
+    version: "{{ item.branch | default(git_branch) }}"
+    depth: 1
+    force: no
+  loop: "{{ custom_addons_repos }}"
+  when: custom_addons_repos | length > 0
+  register: custom_addons_clone
+
+- name: Find all Odoo module directories (containing __manifest__.py)
+  find:
+    paths: "{{ odoo_addons_dir }}"
+    patterns: "__manifest__.py"
+    recurse: yes
+    file_type: file
+  register: manifest_files
+
+- name: Build list of addon paths from discovered modules
+  set_fact:
+    discovered_addon_paths: "{{ manifest_files.files | map(attribute='path') | map('dirname') | map('dirname') | unique | list }}"
+
 - name: Deploy Odoo configuration file
   template:
     src: odoo.conf.j2
@@ -131,6 +155,25 @@
     - "{{ odoo_log_dir }}"
     - "{{ odoo_data_dir }}"
     - "{{ odoo_addons_dir }}"
+
+- name: Initialize Odoo database with base module
+  become_user: "{{ odoo_user }}"
+  command: >
+    {{ odoo_venv_dir }}/bin/python3 {{ odoo_install_dir }}/odoo-bin
+    --config {{ odoo_config_dir }}/odoo.conf
+    -i base
+    --stop-after-init
+  when: git_clone.changed
+  register: odoo_init
+  changed_when: odoo_init.rc == 0
+
+- name: Ensure correct ownership on data directory after init
+  file:
+    path: "{{ odoo_data_dir }}"
+    owner: "{{ odoo_user }}"
+    group: "{{ odoo_group }}"
+    recurse: yes
+  when: odoo_init.changed | default(false)
 
 - name: Enable and start Odoo service
   systemd:

@@ -27,7 +27,7 @@ postgres_version: "16"   # Ubuntu 24.04 native version
 pg_user: odoo
 pg_password: "{{ vault_pg_password }}"
 pg_db: odoo_prod
-pg_host: ""
+pg_host: "localhost"
 pg_port: 5432
 
 # ── Odoo Config ───────────────────────────────────────────────────────────────
@@ -50,6 +50,21 @@ letsencrypt_email: "{{ vault_letsencrypt_email }}"
 
 # ── Git ───────────────────────────────────────────────────────────────────────
 git_branch: "{{ odoo_version }}"
+
+# ── Custom Addons Repositories ────────────────────────────────────────────────
+# Define Git repositories to clone into custom-addons directory
+# Each entry should have: repo (required), branch (optional, defaults to git_branch)
+# The folder name is derived from the repo URL (e.g., server-tools from server-tools.git)
+#
+# Example:
+# custom_addons_repos:
+#   - repo: "https://github.com/OCA/server-tools.git"
+#     branch: "17.0"
+#   - repo: "https://github.com/OCA/web.git"
+#   - repo: "git@github.com:mycompany/private-addons.git"
+#     branch: "main"
+#
+custom_addons_repos: []
 
 # ── Wkhtmltopdf ───────────────────────────────────────────────────────────────
 wkhtmltopdf_url: "https://github.com/wkhtmltopdf/packaging/releases/download/0.12.6.1-3/wkhtmltox_0.12.6.1-3.jammy_amd64.deb"

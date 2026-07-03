@@ -2,8 +2,9 @@
 # ═══════════════════════════════════════════════════════════════════════════════
 # Deploy Custom Addons Playbook
 # Usage:
-#   ansible-playbook deploy_addons.yml
-#   ansible-playbook deploy_addons.yml -e "addon_repo=git@github.com:yourorg/your-addons.git"
+#   ansible-playbook deploy_addons.yml                    # Pull all repos from custom_addons_repos
+#   ansible-playbook deploy_addons.yml -e "update_db=true"  # Pull and update database
+#   ansible-playbook deploy_addons.yml -e "addon_repo=git@github.com:yourorg/addon.git"  # Clone single repo
 #   ansible-playbook deploy_addons.yml -e "module_name=your_module" -e "update_db=true"
 # ═══════════════════════════════════════════════════════════════════════════════
 
@@ -12,15 +13,43 @@
   become: yes
 
   vars:
-    addon_repo: ""              # Override via -e
+    addon_repo: ""              # Override via -e for single repo
     addon_branch: "{{ git_branch }}"
     module_name: "all"          # Module to update, "all" for all installed
     update_db: false            # Set true to run --update after deploy
 
   tasks:
+    # ── Pull all configured custom addon repos ────────────────────────────────
+    - name: Update custom addon repositories
+      become_user: "{{ odoo_user }}"
+      git:
+        repo: "{{ item.repo }}"
+        dest: "{{ odoo_addons_dir }}/{{ item.repo | basename | regex_replace('\\.git$', '') }}"
+        version: "{{ item.branch | default(git_branch) }}"
+        force: no
+        update: yes
+      loop: "{{ custom_addons_repos }}"
+      when:
+        - custom_addons_repos | length > 0
+        - addon_repo == ""
+      register: repos_updated
+
+    # ── Clone/update single repo (override mode) ─────────────────────────────
+    - name: Clone single addon repository
+      become_user: "{{ odoo_user }}"
+      git:
+        repo: "{{ addon_repo }}"
+        dest: "{{ odoo_addons_dir }}/{{ addon_repo | basename | regex_replace('\\.git$', '') }}"
+        version: "{{ addon_branch }}"
+        force: no
+        update: yes
+      when: addon_repo != ""
+      register: single_repo_updated
+
+    # ── Sync local addons (optional) ──────────────────────────────────────────
     - name: Sync local addons to server
       synchronize:
-        src: "{{ local_addons_path | default('./custom-addons/') }}"
+        src: "{{ local_addons_path }}"
         dest: "{{ odoo_addons_dir }}/"
         recursive: yes
         delete: no
@@ -30,15 +59,7 @@
           - "--exclude=.git"
       when: local_addons_path is defined
 
-    - name: Clone addon repository
-      become_user: "{{ odoo_user }}"
-      git:
-        repo: "{{ addon_repo }}"
-        dest: "{{ odoo_addons_dir }}/{{ addon_repo | basename | regex_replace('.git$', '') }}"
-        version: "{{ addon_branch }}"
-        force: no
-      when: addon_repo != ""
-
+    # ── Fix permissions ───────────────────────────────────────────────────────
     - name: Fix addon directory permissions
       file:
         path: "{{ odoo_addons_dir }}"
@@ -46,16 +67,45 @@
         group: "{{ odoo_group }}"
         recurse: yes
 
+    # ── Auto-detect module paths and update config ────────────────────────────
+    - name: Find all Odoo module directories (containing __manifest__.py)
+      find:
+        paths: "{{ odoo_addons_dir }}"
+        patterns: "__manifest__.py"
+        recurse: yes
+        file_type: file
+      register: manifest_files
+
+    - name: Build list of addon paths from discovered modules
+      set_fact:
+        discovered_addon_paths: "{{ manifest_files.files | map(attribute='path') | map('dirname') | map('dirname') | unique | list }}"
+
+    - name: Update Odoo configuration with discovered addon paths
+      template:
+        src: roles/odoo/templates/odoo.conf.j2
+        dest: "{{ odoo_config_dir }}/odoo.conf"
+        owner: "{{ odoo_user }}"
+        group: "{{ odoo_group }}"
+        mode: "0640"
+      notify: restart odoo
+
+    # ── Restart and update ────────────────────────────────────────────────────
     - name: Restart Odoo to pick up new addons
       systemd:
         name: odoo
         state: restarted
+      when: >
+        (repos_updated.changed | default(false)) or
+        (single_repo_updated.changed | default(false))
 
     - name: Wait for Odoo to come up
       wait_for:
         port: "{{ odoo_port }}"
         host: 127.0.0.1
         timeout: 60
+      when: >
+        (repos_updated.changed | default(false)) or
+        (single_repo_updated.changed | default(false))
 
     - name: Update module in database
       become_user: "{{ odoo_user }}"
