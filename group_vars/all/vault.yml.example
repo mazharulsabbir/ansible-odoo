@@ -55,3 +55,11 @@ vault_domain_name: "odoo.yourdomain.com"
 
 # Email for Let's Encrypt SSL certificate registration
 vault_letsencrypt_email: "admin@yourdomain.com"
+
+# ── Git / Private Addon Repositories ────────────────────────────────────────
+# GitHub Personal Access Token used to clone PRIVATE custom addon repos over
+# HTTPS. Only repos marked `private: true` in custom_addons_repos use it.
+# Create a fine-grained or classic PAT with "repo" (read) scope at:
+#   https://github.com/settings/tokens
+# Leave empty if all your custom_addons_repos are public.
+vault_github_token: ""

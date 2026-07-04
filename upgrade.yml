@@ -36,7 +36,10 @@
     - name: Pull latest custom addon repositories
       become_user: "{{ odoo_user }}"
       git:
-        repo: "{{ item.repo }}"
+        repo: >-
+          {{ item.repo | regex_replace('^https://', 'https://x-access-token:' ~ github_token ~ '@')
+             if (item.private | default(false) and (github_token | length > 0))
+             else item.repo }}
         dest: "{{ odoo_addons_dir }}/{{ item.repo | basename | regex_replace('\\.git$', '') }}"
         version: "{{ item.branch | default(git_branch) }}"
         force: no
@@ -44,6 +47,7 @@
       loop: "{{ custom_addons_repos }}"
       when: custom_addons_repos | length > 0
       register: custom_addons_pull
+      no_log: "{{ item.private | default(false) }}"
 
     - name: Find all Odoo module directories
       find:

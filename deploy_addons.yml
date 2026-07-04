@@ -15,6 +15,7 @@
   vars:
     addon_repo: ""              # Override via -e for single repo
     addon_branch: "{{ git_branch }}"
+    addon_private: false        # Set true (-e) if the single override repo is private
     module_name: "all"          # Module to update, "all" for all installed
     update_db: false            # Set true to run --update after deploy
 
@@ -23,7 +24,10 @@
     - name: Update custom addon repositories
       become_user: "{{ odoo_user }}"
       git:
-        repo: "{{ item.repo }}"
+        repo: >-
+          {{ item.repo | regex_replace('^https://', 'https://x-access-token:' ~ github_token ~ '@')
+             if (item.private | default(false) and (github_token | length > 0))
+             else item.repo }}
         dest: "{{ odoo_addons_dir }}/{{ item.repo | basename | regex_replace('\\.git$', '') }}"
         version: "{{ item.branch | default(git_branch) }}"
         force: no
@@ -33,18 +37,23 @@
         - custom_addons_repos | length > 0
         - addon_repo == ""
       register: repos_updated
+      no_log: "{{ item.private | default(false) }}"
 
     # ── Clone/update single repo (override mode) ─────────────────────────────
     - name: Clone single addon repository
       become_user: "{{ odoo_user }}"
       git:
-        repo: "{{ addon_repo }}"
+        repo: >-
+          {{ addon_repo | regex_replace('^https://', 'https://x-access-token:' ~ github_token ~ '@')
+             if (addon_private | bool and (github_token | length > 0))
+             else addon_repo }}
         dest: "{{ odoo_addons_dir }}/{{ addon_repo | basename | regex_replace('\\.git$', '') }}"
         version: "{{ addon_branch }}"
         force: no
         update: yes
       when: addon_repo != ""
       register: single_repo_updated
+      no_log: "{{ addon_private | bool }}"
 
     # ── Sync local addons (optional) ──────────────────────────────────────────
     - name: Sync local addons to server

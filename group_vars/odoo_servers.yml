@@ -51,17 +51,26 @@ letsencrypt_email: "{{ vault_letsencrypt_email }}"
 # ── Git ───────────────────────────────────────────────────────────────────────
 git_branch: "{{ odoo_version }}"
 
+# GitHub token for cloning private HTTPS repos (see vault_github_token in vault.yml)
+github_token: "{{ vault_github_token | default('') }}"
+
 # ── Custom Addons Repositories ────────────────────────────────────────────────
 # Define Git repositories to clone into custom-addons directory
-# Each entry should have: repo (required), branch (optional, defaults to git_branch)
+# Each entry should have:
+#   repo    (required) Git URL
+#   branch  (optional) defaults to git_branch
+#   private (optional) set true for private HTTPS repos — the vault_github_token
+#           is injected into the clone URL. Defaults to false (public).
 # The folder name is derived from the repo URL (e.g., server-tools from server-tools.git)
 #
 # Example:
 # custom_addons_repos:
-#   - repo: "https://github.com/OCA/server-tools.git"
+#   - repo: "https://github.com/OCA/server-tools.git"      # public
 #     branch: "17.0"
-#   - repo: "https://github.com/OCA/web.git"
-#   - repo: "git@github.com:mycompany/private-addons.git"
+#   - repo: "https://github.com/mycompany/private-addons.git"  # private via token
+#     branch: "main"
+#     private: true
+#   - repo: "git@github.com:mycompany/other-addons.git"    # private via SSH key
 #     branch: "main"
 #
 custom_addons_repos: []
