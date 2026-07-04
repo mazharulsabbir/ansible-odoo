@@ -12,16 +12,11 @@
   vars:
     backup_before_upgrade: true
 
-  pre_tasks:
-    - name: Take backup before upgrade
-      command: /usr/local/bin/odoo_backup.sh
-      become_user: "{{ odoo_user }}"
-      when: backup_before_upgrade
-
-    - name: Stop Odoo service
-      systemd:
-        name: odoo
-        state: stopped
+#  pre_tasks:
+#    - name: Take backup before upgrade
+#      command: /usr/local/bin/odoo_backup.sh
+#      become_user: "{{ odoo_user }}"
+#      when: backup_before_upgrade
 
   tasks:
     - name: Pull latest Odoo core from git
@@ -77,11 +72,27 @@
         state: present
       when: git_pull.changed
 
+    - name: Stop Odoo service before schema update
+      systemd:
+        name: odoo
+        state: stopped
+      when: git_pull.changed or (custom_addons_pull.changed | default(false))
+
+    - name: Ensure Odoo owns its data directory (filestore)
+      file:
+        path: "{{ odoo_data_dir }}"
+        state: directory
+        owner: "{{ odoo_user }}"
+        group: "{{ odoo_group }}"
+        recurse: yes
+      when: git_pull.changed or (custom_addons_pull.changed | default(false))
+
     - name: Update Odoo database schema
       become_user: "{{ odoo_user }}"
       command: >
         {{ odoo_venv_dir }}/bin/python3 {{ odoo_install_dir }}/odoo-bin
         --config {{ odoo_config_dir }}/odoo.conf
+        --database {{ pg_db }}
         --update all
         --stop-after-init
       when: git_pull.changed or (custom_addons_pull.changed | default(false))
