@@ -1,4 +1,8 @@
 ---
+# ── Connection (from vault, so no -k/-K flags needed) ─────────────────────────
+ansible_password: "{{ vault_ssh_password }}"
+ansible_become_password: "{{ vault_sudo_password }}"
+
 # ── Odoo Version ─────────────────────────────────────────────────────────────
 odoo_version: "19.0"                        # Change to 15.0 / 16.0 / 17.0
 odoo_release: "20240401"                    # Set to specific nightly or leave empty ""
@@ -17,7 +21,7 @@ odoo_addons_dir: "{{ odoo_home }}/custom-addons"
 odoo_backup_dir: /var/backups/odoo
 
 # ── Python ────────────────────────────────────────────────────────────────────
-python_version: "3.12"   # 3.10 for Odoo 16/17, 3.8 for Odoo 15
+python_version: "3.12"   # 3.12 on Ubuntu 24.04 (Odoo 17); 3.10 on 22.04; 3.8 for Odoo 15
 
 # ── Node.js (for Odoo CSS tooling: less, rtlcss) ──────────────────────────────
 nodejs_version: "20"     # LTS; installed from NodeSource
